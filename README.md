@@ -1,4 +1,4 @@
-# midholiday
+# assistant ai app
 
 A new Flutter project.
 
