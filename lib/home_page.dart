@@ -11,45 +11,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String lastwords = '';
-  final speech = SpeechToText();
+  String lastWords = 'hey';
+  final speechToText = SpeechToText();
   @override
   void initState() {
     super.initState();
-    speechtotext();
+    initSpeechToText();
   }
 
-  Future<void> speechtotext() async {
-    await speech.initialize();
+  Future<void> initSpeechToText() async {
+    await speechToText.initialize();
     setState(() {});
   }
 
   Future<void> startListening() async {
-    await speech.listen(onResult: onSpeechResult);
+    await speechToText.listen(onResult: onSpeechResult);
     setState(() {});
   }
 
-  /// Manually stop the active speech recognition session
-  /// Note that there are also timeouts that each platform enforces
-  /// and the SpeechToText plugin supports setting timeouts on the
-  /// listen method.
   Future<void> stopListening() async {
-    await speech.stop();
+    await speechToText.stop();
     setState(() {});
   }
 
-  /// This is the callback that the SpeechToText plugin calls when
-  /// the platform returns recognized words.
   void onSpeechResult(SpeechRecognitionResult result) {
     setState(() {
-      lastwords = result.recognizedWords;
+      lastWords = result.recognizedWords;
     });
   }
 
   @override
   void dispose() {
     super.dispose();
-    speech.stop();
+    speechToText.stop();
   }
 
   @override
@@ -114,6 +108,7 @@ class _HomePageState extends State<HomePage> {
                   Description:
                       'save typing time and get quick answers on the go',
                 ),
+                Text(lastWords),
               ],
             )
           ],
@@ -121,12 +116,13 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          if (await speech.hasPermission && speech.isNotListening) {
+          if (await speechToText.hasPermission && speechToText.isNotListening) {
             await startListening();
-          } else if (speech.isListening) {
+          } else if (speechToText.isListening) {
+            // final speech = await openAIService.isArtPromptAPI(lastWords);
             await stopListening();
           } else {
-            speechtotext();
+            initSpeechToText();
           }
         },
         backgroundColor: Colors.blue.shade100,
