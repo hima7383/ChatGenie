@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:midholiday/dialog_temp.dart';
+import 'package:midholiday/openoi.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
@@ -11,12 +15,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String lastWords = 'hey';
+  String lastWords = '';
+  String? genimage;
+  String? genwords;
+  final OpenAiService openai = OpenAiService();
   final speechToText = SpeechToText();
+  FlutterTts flutteetts = FlutterTts();
   @override
   void initState() {
     super.initState();
     initSpeechToText();
+    flutteetts = FlutterTts();
   }
 
   Future<void> initSpeechToText() async {
@@ -38,6 +47,10 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       lastWords = result.recognizedWords;
     });
+  }
+
+  Future<void> systemSpeak(String content) async {
+    await flutteetts.speak(content);
   }
 
   @override
@@ -84,32 +97,39 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(
               height: 40,
             ),
-            const Text(
-              "heya how can i help!",
-              style: TextStyle(fontSize: 23, fontWeight: FontWeight.w400),
+            if (genimage != null) Image.network(genimage!),
+            Text(
+              genwords == null && genimage == null
+                  ? "heya how can i help!"
+                  : genwords!,
+              style: TextStyle(
+                  fontSize: genwords == null ? 23 : 18,
+                  fontWeight: FontWeight.w400),
             ),
             const SizedBox(
               height: 100,
             ),
             // app futures
-            Column(
-              children: [
-                FuturesBox(
-                  color: Colors.green.shade100,
-                  title: 'Chat GPT',
-                  Description: 'Using Ai for better answers for your needs',
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                FuturesBox(
-                  color: Colors.blue.shade200,
-                  title: 'Voice Commands',
-                  Description:
-                      'save typing time and get quick answers on the go',
-                ),
-                Text(lastWords),
-              ],
+            Visibility(
+              visible: genwords == null && genimage == null,
+              child: Column(
+                children: [
+                  FuturesBox(
+                    color: Colors.green.shade100,
+                    title: 'Chat GPT',
+                    Description: 'Using Ai for better answers for your needs',
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  FuturesBox(
+                    color: Colors.blue.shade200,
+                    title: 'Voice Commands',
+                    Description:
+                        'save typing time and get quick answers on the go',
+                  ),
+                ],
+              ),
             )
           ],
         ),
@@ -119,7 +139,18 @@ class _HomePageState extends State<HomePage> {
           if (await speechToText.hasPermission && speechToText.isNotListening) {
             await startListening();
           } else if (speechToText.isListening) {
-            // final speech = await openAIService.isArtPromptAPI(lastWords);
+            log(lastWords);
+            final temp = await openai.decideCorrectApi(lastWords);
+            if (temp.contains('https')) {
+              genimage = temp;
+              genwords = null;
+              setState(() {});
+            } else {
+              genimage = null;
+              genwords = temp;
+              setState(() {});
+              await systemSpeak(temp);
+            }
             await stopListening();
           } else {
             initSpeechToText();
