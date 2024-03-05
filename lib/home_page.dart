@@ -43,10 +43,35 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
   }
 
-  void onSpeechResult(SpeechRecognitionResult result) {
+  void onSpeechResult(SpeechRecognitionResult result) async {
+    if (result.recognizedWords.isNotEmpty && result.finalResult) {
+      await Future.delayed(const Duration(seconds: 3));
+      await getsomething();
+    }
     setState(() {
       lastWords = result.recognizedWords;
     });
+  }
+
+  Future<void> getsomething() async {
+    await Future.delayed(const Duration(seconds: 3));
+    log(lastWords);
+    final temp = await openai.decideCorrectApi(lastWords);
+    if (temp.contains('https')) {
+      genimage = temp;
+      genwords = null;
+      setState(() {});
+    } else {
+      genimage = null;
+      genwords = temp;
+      setState(() {});
+      await systemSpeak(temp);
+    }
+    await stopListening();
+  }
+
+  Future<void> stopSpeaking() async {
+    await flutteetts.stop();
   }
 
   Future<void> systemSpeak(String content) async {
@@ -97,15 +122,26 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(
               height: 40,
             ),
-            if (genimage != null) Image.network(genimage!),
-            Text(
-              genwords == null && genimage == null
-                  ? "heya how can i help!"
-                  : genwords!,
-              style: TextStyle(
-                  fontSize: genwords == null ? 23 : 18,
-                  fontWeight: FontWeight.w400),
-            ),
+            if (genimage != null)
+              ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.network(genimage!)),
+
+            if (genwords != null)
+              Text(
+                genwords!,
+                style: TextStyle(
+                    fontSize: genwords == null ? 23 : 18,
+                    fontWeight: FontWeight.w400),
+              ),
+            if (genimage == null && genwords == null)
+              Text(
+                "heya how can i help!",
+                style: TextStyle(
+                    fontSize: genwords == null ? 23 : 18,
+                    fontWeight: FontWeight.w400),
+              ),
+
             const SizedBox(
               height: 100,
             ),
@@ -130,15 +166,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          if (await speechToText.hasPermission && speechToText.isNotListening) {
+          /* if (await speechToText.hasPermission && speechToText.isNotListening) {
             await startListening();
           } else if (speechToText.isListening) {
+            await Future.delayed(const Duration(seconds: 2));
             log(lastWords);
             final temp = await openai.decideCorrectApi(lastWords);
             if (temp.contains('https')) {
@@ -155,6 +192,9 @@ class _HomePageState extends State<HomePage> {
           } else {
             initSpeechToText();
           }
+          */
+          await stopSpeaking();
+          await startListening();
         },
         backgroundColor: Colors.blue.shade100,
         child: const Icon(Icons.mic),

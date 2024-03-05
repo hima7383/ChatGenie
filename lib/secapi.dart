@@ -1,1 +1,1 @@
-const secretApi = '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';
+const secretApi = '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';

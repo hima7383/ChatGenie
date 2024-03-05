@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:http/http.dart' as http;
 import 'package:midholiday/secapi.dart';
@@ -20,13 +21,13 @@ class OpenAiService {
               {
                 'role': 'user',
                 'content':
-                    'Does this message want to generate or show an AI picture, image, art or anything similar? $msg . Simply answer with a yes or no.'
+                    'if the folowing  massage require display of an image say yes else say no the massage is $msg .'
               }
             ]
           },
         ),
       );
-      print(result.body);
+      log(result.body);
       if (result.statusCode == 200) {
         String content =
             jsonDecode(result.body)['choices'][0]['message']['content'];
@@ -42,14 +43,15 @@ class OpenAiService {
             return res;
         }
       }
-      return 'unexcpected error';
+      return 'Internal Erorr';
     } catch (e) {
+      log(e.toString());
       return e.toString();
     }
   }
 
   Future<String> chatGpt(String msg) async {
-    print(msg);
+    // print(msg);
     messages.add(
       {'role': 'user', 'content': msg},
     );
@@ -111,7 +113,7 @@ class OpenAiService {
 
         return imageUrl;
       }
-      return 'unexcpected error';
+      return 'unexcpected error ';
     } catch (e) {
       return e.toString();
     }
